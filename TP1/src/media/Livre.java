@@ -1,8 +1,9 @@
 package media;
 
-class Livre extends Media {
+class Livre {
 
-	public Livre(String titre) {
-		super();
+	public Livre() {
+	  
+		//super();
 	}
 }
