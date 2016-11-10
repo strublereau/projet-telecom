@@ -1,0 +1,739 @@
+1- CREATE TABLE RBB AS SELECT * FROM BONS_BUVEURS;
+
+2- 
+select nb from achats a1
+  2  group by nb
+  3  having sum(QTE) > 100;
+
+	NB
+----------
+	 2
+	 5
+	 8
+	 9
+	44
+
+
+SQL> Update buveurs b
+  2  set TYPE = 'gros'
+  3  where b.NB in (select a.NB from achats a group by a.NB having sum(QTE) > 100);
+
+5 rows updated.
+
+3- 
+select * from rbb b
+where nb in (
+select nb from achats a1
+group by nb
+having sum(QTE) > 100)
+select * from bons_buveurs b
+where nb in (
+select nb from achats a1
+group by nb
+having sum(QTE) > 100)
+
+bons_buveurs est une vue elle est donc impactée par les mises à jours de la table maître buveurs alors que la table rbb un fois créée vit sa vie de manière autonome.
+
+4- 
+
+insert into bons_buveurs
+       values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'Stephane', 'moyen');
+
+1 row created.
+
+SQL> select * from buveurs where nb = 101;
+
+	NB NOM
+---------- ----------------------------------------
+PRENOM					 TYPE
+---------------------------------------- --------
+       101 Trublereau
+Stephane				 moyen
+
+
+SQL> select * from bons_buveurs where nb = 101;
+
+	NB NOM
+---------- ----------------------------------------
+PRENOM					 TYPE
+---------------------------------------- --------
+       101 Trublereau
+Stephane				 moyen
+
+5- 
+SQL> insert into bons_buveurs
+       values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'Stephane', 'moyen');  2  
+
+1 row created.
+
+SQL> select * from buveurs where nb = 101;
+
+	NB NOM
+---------- ----------------------------------------
+PRENOM					 TYPE
+---------------------------------------- --------
+       101 Trublereau
+Stephane				 moyen
+
+Oui le nouveau buveurs est visible dans la vue :
+
+SQL> select * from bons_buveurs where nb = 10
+---------- ----------------------------------------
+PRENOM					 TYPE
+---------------------------------------- --------
+       101 Trublereau
+Stephane				 moyen
+
+SQL> insert into bons_buveurs
+       values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'emmanuel', 'petit');  2  
+
+1 row created.
+
+---------- ----------------------------------------
+PRENOM					 TYPE
+---------------------------------------- --------
+       101 Trublereau
+emmanuel				 petit
+
+SQL> select * from buveurs where nb = 101;
+
+	NB NOM
+---------- ----------------------------------------
+PRENOM					 TYPE
+---------------------------------------- --------
+       101 Trublereau
+emmanuel				petit
+
+
+6-
+create view bons_buveurs as 
+select * from buveurs
+where type = 'gros' or type = 'petit'
+with check option;
+
+
+Insert into bons_buveurs
+       values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'philippe', 'petit');  
+
+Insert into bons_buveurs
+            *
+ERROR at line 1:
+ORA-01402: view WITH CHECK OPTION where-clause violation
+
+
+7- re-creer buveurs _achats et buveurs_achats2
+
+
+SQL> drop view buveurs_achats
+  2  ;
+
+View dropped.
+
+SQL> drop view buveurs_achats2;
+
+View dropped.
+
+create view buveurs_Achats as 
+select * from buveurs
+where nb in (select nb from achats)
+with check option;
+View created.
+
+create view buveurs_Achats2 as 
+select * from buveurs
+where nb not in (select nb from buveurs_asec)
+with check option;
+View created.
+
+Insert into buveurs_Achats
+values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'p001', 'petit'); 
+Insert into buveurs_Achats
+            *
+ERROR at line 1:
+ORA-01402: view WITH CHECK OPTION where-clause violation
+Normal le nouveau buveur n'est pas dans la table achats on ne respecte pas la condition de creation de la vue ou l'on devrait avoir le tuple dans achat
+
+Insert into buveurs_Achats2
+values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'p002', 'petit');  
+Insert into buveurs_Achats
+            *
+Insert into buveurs_Achats2
+values ( (select max(b.nb) + 1 from buveurs b), 'Trublereau', 'p002', 'petit');  
+Insert into buveurs_Achats  2  
+1 row created.
+La création est posisble car on respecte les conditions de création de la view (non present dans la table achats)
+
+8- Insérer dans q83pl le tuple ('PARIS', 'Cotes du Jura', 300) 
+
+insert into q83pl
+values ('PARIS', 'Cotes du Jura', 300);
+insert into q83pl
+*
+ERROR at line 1:
+ORA-01776: cannot modify more than one base table through a join view
+Comme le message l'indique 
+
+delete from q83pl where QTE_BUE > 100
+            *
+ERROR at line 1:
+ORA-01732: data manipulation operation not legal on this view
+
+Seconde partie : PL/SQL et procedures
+
+DECLARE
+    x  NUMBER := 1;
+BEGIN
+    WHILE x < 100 LOOP
+          DELETE FROM ACHATS WHERE nv=x;
+	  x := x + 2;        
+    END LOOP;
+END;
+/
+/// suppression pour les NV impairs et < 100 .
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	 2	   48 25-DEC-83 LYON					2
+	 4	    8 05-NOV-82 TOULOUSE			       12
+	 4	   44 16-OCT-15 Paris					6
+	 4	   50 29-JUN-81 SENS					4
+	 6	    3 21-JAN-78 NANCY				       36
+	 8	    9 01-NOV-79 LILLE				       10
+	 8	    1 15-SEP-82 PARIS				       78
+	 8	   60 12-MAY-80 TOULONi 				8
+	10	    2 30-OCT-82 CHALON SUR SAONE		      500
+	10	    3 31-DEC-77 BORDEAUX			       10
+	10	    5 06-JUN-83 LYON				       10
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	12	    6 05-NOV-82 TOULOUSE			       36
+	16	   44 16-OCT-15 Paris					2
+	20	   61 12-JUN-78 NICE				       20
+	20	   44 16-OCT-15 Paris					3
+	22	   75 23-MAY-85 ROCQUENCOURT			       22
+	22	   80 24-DEC-87 PARLY				       22
+	24	  100 12-JUN-86 LE CHESNAY			       14
+	26	   44 16-OCT-15 Paris					4
+	28	   44 16-OCT-15 Paris					5
+	32	   24 31-DEC-80 PARIS					7
+	32	   22 14-FEB-83 PARIS					3
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	38	   12 06-AUG-81 CAEN					5
+	38	   14 12-MAY-81 CAEN					2
+	40	   15 25-MAR-82 NICE				       30
+	40	   17 02-APR-82 DIJON				       25
+	40	   19 31-DEC-80 DIJON				       12
+	40	   33 01-APR-82 TOULOUSE				1
+	40	   92 10-AUG-86 LE CHESNAY				4
+	42	   94 27-JUL-85 SENS					3
+	42	  100 10-MAR-83 PARIS					4
+	50	   38 23-FEB-88 PARIS					1
+	54	    8 05-MAY-83 ROCQUENCOURT			      120
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	56	    5 05-MAY-83 ROCQUENCOURT			       80
+	62	   96 21-DEC-80 PARIS					5
+	64	   97 31-DEC-83 PARIS					1
+	74	   44 16-OCT-15 Paris					8
+	78	   44 16-OCT-15 Paris					9
+	80	   44 16-OCT-15 Paris				       11
+	82	   44 16-OCT-15 Paris				       13
+	84	   44 16-OCT-15 Paris				       15
+	86	   44 16-OCT-15 Paris				       17
+       100	   41 04-NOV-82 CANNES				       10
+       100	    5 21-FEB-83 CAEN					3
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+       100	   40 05-NOV-82 NANCY				       11
+45 rows selected.
+
+rollback;
+
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	 1	   45 31-DEC-83 RENNES					1
+	 1	    2 02-NOV-77 BORDEAUX			       33
+	 1	   44 16-OCT-15 Paris					1
+	 2	   48 25-DEC-83 LYON					2
+	 3	   49 24-DEC-87 MERCUREY				5
+	 3	    7 01-NOV-78 NICE					6
+	 4	   44 16-OCT-15 Paris					6
+	 4	    8 05-NOV-82 TOULOUSE			       12
+	 4	   50 29-JUN-81 SENS					4
+	 5	   52 29-JUN-83 LILLE					5
+	 5	    2 04-NOV-84 MERCUREY			       50
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	 6	    3 21-JAN-78 NANCY				       36
+	 7	    4 19-SEP-87 PARIS				       24
+	 7	   58 28-APR-87 CANNES					7
+	 8	   60 12-MAY-80 TOULONi 				8
+	 8	    1 15-SEP-82 PARIS				       78
+	 8	    9 01-NOV-79 LILLE				       10
+	 9	   10 12-MAY-79 LILLE					1
+	 9	    5 26-MAR-82 LYON				       20
+	 9	   61 21-APR-07 TOULONi 				9
+	10	    5 06-JUN-83 LYON				       10
+	10	    3 31-DEC-77 BORDEAUX			       10
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	10	    2 30-OCT-82 CHALON SUR SAONE		      500
+	12	    6 05-NOV-82 TOULOUSE			       36
+	16	   44 16-OCT-15 Paris					2
+	20	   44 16-OCT-15 Paris					3
+	20	   61 12-JUN-78 NICE				       20
+	21	   62 05-APR-87 CANNES				       21
+	22	   80 24-DEC-87 PARLY				       22
+	22	   75 23-MAY-85 ROCQUENCOURT			       22
+	23	   82 20-MAR-88 PARLY				       23
+	24	  100 12-JUN-86 LE CHESNAY			       14
+	26	   44 16-OCT-15 Paris					4
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	28	   44 16-OCT-15 Paris					5
+	31	   28 25-DEC-78 LYON				      100
+	31	   26 31-DEC-84 LYON					6
+	32	   22 14-FEB-83 PARIS					3
+	32	   24 31-DEC-80 PARIS					7
+	35	   30 25-DEC-81 LYON				       80
+	38	   14 12-MAY-81 CAEN					2
+	38	   12 06-AUG-81 CAEN					5
+	40	   92 10-AUG-86 LE CHESNAY				4
+	40	   33 01-APR-82 TOULOUSE				1
+	40	   17 02-APR-82 DIJON				       25
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	40	   15 25-MAR-82 NICE				       30
+	40	   19 31-DEC-80 DIJON				       12
+	41	   31 01-APR-88 TOULOUSE				2
+	41	   94 29-DEC-85 SENS					3
+	42	   94 27-JUL-85 SENS					3
+	42	  100 10-MAR-83 PARIS					4
+	43	   44 16-OCT-15 Paris					7
+	50	   38 23-FEB-88 PARIS					1
+	53	   12 06-JUN-83 ROCQUENCOURT			       10
+	54	    8 05-MAY-83 ROCQUENCOURT			      120
+	55	    9 05-MAY-83 ROCQUENCOURT			      130
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	56	    5 05-MAY-83 ROCQUENCOURT			       80
+	62	   96 21-DEC-80 PARIS					5
+	63	    3 02-FEB-82 PARIS				       12
+	64	   97 31-DEC-83 PARIS					1
+	74	   44 16-OCT-15 Paris					8
+	78	   44 16-OCT-15 Paris					9
+	79	   44 16-OCT-15 Paris				       10
+	80	   44 16-OCT-15 Paris				       11
+	81	   44 16-OCT-15 Paris				       12
+	82	   44 16-OCT-15 Paris				       13
+	83	   44 16-OCT-15 Paris				       14
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	84	   44 16-OCT-15 Paris				       15
+	85	   44 16-OCT-15 Paris				       16
+	86	   44 16-OCT-15 Paris				       17
+	87	   44 16-OCT-15 Paris				       18
+       100	   40 05-NOV-82 NANCY				       11
+       100	   41 04-NOV-82 CANNES				       10
+       100	    5 21-FEB-83 CAEN					3
+
+73 rows selected.
+
+
+BEGIN
+    FOR i IN 1..100 LOOP
+	IF MOD(i,2) = 0 THEN     -- i est pair
+	    UPDATE ACHATS SET QTE=QTE*2 WHERE nv=i;
+	ELSE
+	    UPDATE ACHATS SET QTE=QTE/2 WHERE nv=i;
+	END IF;
+    END LOOP;
+END;
+/
+multiplie par 2 les quantités les NV pairs
+et divise par 2 les quantités des NV impairs
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	 1	   45 31-DEC-83 RENNES					1
+	 1	    2 02-NOV-77 BORDEAUX			       17
+	 1	   44 16-OCT-15 Paris					1
+	 2	   48 25-DEC-83 LYON					4
+	 3	   49 24-DEC-87 MERCUREY				3
+	 3	    7 01-NOV-78 NICE					3
+	 4	   44 16-OCT-15 Paris				       12
+	 4	    8 05-NOV-82 TOULOUSE			       24
+	 4	   50 29-JUN-81 SENS					8
+	 5	   52 29-JUN-83 LILLE					3
+	 5	    2 04-NOV-84 MERCUREY			       25
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	 6	    3 21-JAN-78 NANCY				       72
+	 7	    4 19-SEP-87 PARIS				       12
+	 7	   58 28-APR-87 CANNES					4
+	 8	   60 12-MAY-80 TOULONi 			       16
+	 8	    1 15-SEP-82 PARIS				      156
+	 8	    9 01-NOV-79 LILLE				       20
+	 9	   10 12-MAY-79 LILLE					1
+	 9	    5 26-MAR-82 LYON				       10
+	 9	   61 21-APR-07 TOULONi 				5
+	10	    5 06-JUN-83 LYON				       20
+	10	    3 31-DEC-77 BORDEAUX			       20
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	10	    2 30-OCT-82 CHALON SUR SAONE		     1000
+	12	    6 05-NOV-82 TOULOUSE			       72
+	16	   44 16-OCT-15 Paris					4
+	20	   44 16-OCT-15 Paris					6
+	20	   61 12-JUN-78 NICE				       40
+	21	   62 05-APR-87 CANNES				       11
+	22	   80 24-DEC-87 PARLY				       44
+	22	   75 23-MAY-85 ROCQUENCOURT			       44
+	23	   82 20-MAR-88 PARLY				       12
+	24	  100 12-JUN-86 LE CHESNAY			       28
+	26	   44 16-OCT-15 Paris					8
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	28	   44 16-OCT-15 Paris				       10
+	31	   28 25-DEC-78 LYON				       50
+	31	   26 31-DEC-84 LYON					3
+	32	   22 14-FEB-83 PARIS					6
+	32	   24 31-DEC-80 PARIS				       14
+	35	   30 25-DEC-81 LYON				       40
+	38	   14 12-MAY-81 CAEN					4
+	38	   12 06-AUG-81 CAEN				       10
+	40	   92 10-AUG-86 LE CHESNAY				8
+	40	   33 01-APR-82 TOULOUSE				2
+	40	   17 02-APR-82 DIJON				       50
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	40	   15 25-MAR-82 NICE				       60
+	40	   19 31-DEC-80 DIJON				       24
+	41	   31 01-APR-88 TOULOUSE				1
+	41	   94 29-DEC-85 SENS					2
+	42	   94 27-JUL-85 SENS					6
+	42	  100 10-MAR-83 PARIS					8
+	43	   44 16-OCT-15 Paris					4
+	50	   38 23-FEB-88 PARIS					2
+	53	   12 06-JUN-83 ROCQUENCOURT				5
+	54	    8 05-MAY-83 ROCQUENCOURT			      240
+	55	    9 05-MAY-83 ROCQUENCOURT			       65
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	56	    5 05-MAY-83 ROCQUENCOURT			      160
+	62	   96 21-DEC-80 PARIS				       10
+	63	    3 02-FEB-82 PARIS					6
+	64	   97 31-DEC-83 PARIS					2
+	74	   44 16-OCT-15 Paris				       16
+	78	   44 16-OCT-15 Paris				       18
+	79	   44 16-OCT-15 Paris					5
+	80	   44 16-OCT-15 Paris				       22
+	81	   44 16-OCT-15 Paris					6
+	82	   44 16-OCT-15 Paris				       26
+	83	   44 16-OCT-15 Paris					7
+
+	NV	   NB DATES	LIEU				      QTE
+---------- ---------- --------- ------------------------------ ----------
+	84	   44 16-OCT-15 Paris				       30
+	85	   44 16-OCT-15 Paris					8
+	86	   44 16-OCT-15 Paris				       34
+	87	   44 16-OCT-15 Paris					9
+       100	   40 05-NOV-82 NANCY				       22
+       100	   41 04-NOV-82 CANNES				       20
+       100	    5 21-FEB-83 CAEN					6
+
+73 rows selected.
+
+
+Exercice 2 deuxieme 
+
+Commence par creer un curseur basé des vins des recoltes des producteurs d'alsace.
+
+Ce curseur est lu par le programme lorsque le vin est du millesime 1976,1978,1983 et indique dans la table temp avec l'information recolte exceptionnelle et dans le cas des autres vins "RAS"
+
+      VIN DESCRIPTION			  COMMENTAIRE
+---------- ------------------------------ ------------------------------
+	 1 Mercurey(1980)		  RAS !
+	 3 Savigny les Beaunes(1978)	  R??colte exeptionelle !
+	34 Montagny(1978)		  R??colte exeptionelle !
+	45 Chiroubles(1983)		  R??colte exeptionelle !
+	49 Morgon(1984) 		  RAS !
+	50 Chenas(1984) 		  RAS !
+	54 Beaujolais Villages(1976)	  R??colte exeptionelle !
+	78 Etoile(1980) 		  RAS !
+
+8 rows selected.
+
+
+Rollback
+
+
+
+
+
+
+
+Exercice 2 troisieme
+
+Même chose avec fetch implicite
+      VIN DESCRIPTION			  COMMENTAIRE
+---------- ------------------------------ ------------------------------
+	 1 Mercurey(1980)		  RAS !
+	 3 Savigny les Beaunes(1978)	  R??colte exeptionelle !
+	34 Montagny(1978)		  R??colte exeptionelle !
+	45 Chiroubles(1983)		  R??colte exeptionelle !
+	49 Morgon(1984) 		  RAS !
+	50 Chenas(1984) 		  RAS !
+	54 Beaujolais Villages(1976)	  R??colte exeptionelle !
+	78 Etoile(1980) 		  RAS !
+
+8 rows selected.
+
+sqlplus bda14/bda@//oratp.enst.fr:1521/bda.enst.fr
+'
+
+CREATE OR REPLACE PROCEDURE VSTAT (numv VINS.nv%TYPE) AS
+
+cursor V_CUR is SELECT p.region,COUNT (DISTINCT p.np) FROM producteurs p, recoltes r, vins v WHERE r.nv = v.nv AND p.np = r.np AND v.nv = numv GROUP BY (p.region);
+V_REGION PRODUCTEURS.REGION%TYPE;
+V_COUNT NUMBER(5);
+
+
+cursor A_CUR is SELECT DISTINCT to_char(a.dates,'YY') annee FROM achats a WHERE a.nv = numv ;
+
+/* A_LIGNE ACHATS.DAT%TYPE; */
+A_LIGNE CHAR(2);
+A_QT ACHATS.QTE%TYPE;
+A_LIEU ACHATS.LIEU%TYPE;
+
+BEGIN
+   open V_CUR;
+   loop
+      fetch V_CUR into V_REGION, V_COUNT;
+      exit when V_CUR%NOTFOUND;
+      dbms_output.put_line( 'Region : ' || V_REGION || ', '  ||  To_char(V_COUNT) || ' producteurs');
+   end loop;
+   open A_CUR;
+
+   loop
+       fetch A_CUR into A_Ligne;
+       exit when A_CUR%NOTFOUND;
+       DECLARE
+            cursor A_PAR is SELECT DISTINCT SUM(a.QTE) QT, a.LIEU FROM achats a WHERE substr(a.DATES,8,2) = A_Ligne AND a.nv = numv GROUP BY (a.LIEU) ORDER BY SUM(a.QTE) DESC;
+
+       BEGIN
+            dbms_output.put_line( '***** Annee ' || A_Ligne || ' *****');
+            for A_PLIGNE in A_PAR loop
+                A_QT := A_PLIGNE.QT;
+                A_LIEU := A_PLIGNE.LIEU;
+                dbms_output.put_line( 'A ' || A_LIEU || ', ' || To_char( A_QT ) || ' bouteilles vendues') ;
+            end loop;
+
+        END;
+
+
+   end loop;
+   close A_CUR;
+END;
+/
+0
+
+   for vente in B_CUR LOOP
+    dbms_output.put_line('Nombre de bouteilles vendues en '|| vente.lieu ||' le '||vente.dates_y|| ' : '||vente.nb_bouteilles_vendues);
+   end LOOP;
+
+execute VSTAT(12)
+
+'
+'
+CREATE OR REPLACE PROCEDURE VSTAT (numv VINS.nv%TYPE) AS
+
+BEGIN
+   dbms_output.put_line( 'demarrage programme');
+END;
+/
+
+SELECT p.region,COUNT (DISTINCT p.np) FROM producteurs p, recoltes r, vins v WHERE r.nv = v.nv AND p.np = r.np AND v.nv = 12 GROUP BY (p.region);
+
+
+BEGIN
+execute VSTAT(12)
+END
+
+drop procedure VSTAT;
+
+CREATE OR REPLACE PROCEDURE VSTAT (numv VINS.nv%TYPE) AS
+
+cursor V_CUR is SELECT p.region,COUNT (DISTINCT p.np) FROM producteurs p, recoltes r, vins v WHERE r.nv = v.nv AND p.np = r.np AND v.nv = numv GROUP BY (p.region);
+V_REGION PRODUCTEURS.REGION%TYPE;
+V_COUNT NUMBER(5);
+
+CURSOR ventes is select lieu, EXTRACT(year FROM dates) as dates_y ,  sum(qte) as nb_bouteilles_vendues
+from achats
+where achats.nv = numv
+group by lieu, EXTRACT(year FROM dates)
+order by nb_bouteilles_vendues DESC;
+
+/* A_LIGNE ACHATS.DAT%TYPE; */
+A_LIGNE CHAR(2);
+A_QT ACHATS.QTE%TYPE;
+A_LIEU ACHATS.LIEU%TYPE;
+A_ANNEE CHAR(4);
+
+BEGIN
+   open V_CUR;
+   loop
+      fetch V_CUR into A_LIEU, A,ANNEE, A_QT_ACHAT;
+      exit when V_CUR%NOTFOUND;
+      dbms_output.put_line( 'Region : ' || V_REGION || ', '  ||  To_char(V_COUNT) || ' producteurs');
+   end loop;
+   close V_CUR;
+   open ventes;
+   loop
+      fetch ventes into 
+      dbms_output.put_line('Nombre de bouteilles vendues en '|| vente.lieu ||' le '||vente.dates_y|| ' : '||vente.nb_bouteilles_vendues);
+   end LOOP;
+   close ventes;
+END;
+/
+
+
+   open A_CUR;
+   loop
+       fetch A_CUR into A_Ligne;
+       exit when A_CUR%NOTFOUND;
+       DECLARE
+            cursor A_PAR is SELECT DISTINCT SUM(a.QTE) QT, a.LIEU FROM achats a WHERE substr(a.DATES,8,2) = A_Ligne AND a.nv = numv GROUP BY (a.LIEU) ORDER BY SUM(a.QTE) DESC;
+
+       BEGIN
+            dbms_output.put_line( '***** Annee ' || A_Ligne || ' *****');
+            for A_PLIGNE in A_PAR loop
+                A_QT := A_PLIGNE.QT;
+                A_LIEU := A_PLIGNE.LIEU;
+                dbms_output.put_line( 'A ' || A_LIEU || ', ' || To_char( A_QT ) || ' bouteilles vendues') ;
+            end loop;
+
+        END;
+   end loop;
+   close A_CUR;
+
+
+CREATE OR REPLACE PROCEDURE VSTAT (numv VINS.nv%TYPE) AS
+
+cursor V_CUR is SELECT p.region,COUNT (DISTINCT p.np) FROM producteurs p, recoltes r, vins v WHERE r.nv = v.nv AND p.np = r.np AND v.nv = numv GROUP BY (p.region);
+V_REGION PRODUCTEURS.REGION%TYPE;
+V_COUNT NUMBER(5);
+
+cursor A_CUR is SELECT DISTINCT to_char(a.dates,'YY') annee FROM achats a WHERE a.nv = numv ;
+
+/* A_LIGNE ACHATS.DAT%TYPE; */
+A_LIGNE CHAR(2);
+A_QT ACHATS.QTE%TYPE;
+A_LIEU ACHATS.LIEU%TYPE;
+
+CURSOR ventes is select lieu, EXTRACT(year FROM dates) as dates_y ,  sum(qte) as nb_bouteilles_vendues
+from achats
+where achats.nv = numv
+group by lieu, EXTRACT(year FROM dates)
+order by nb_bouteilles_vendues DESC;
+
+BEGIN
+   open V_CUR;
+   loop
+      fetch V_CUR into V_REGION, V_COUNT;
+      exit when V_CUR%NOTFOUND;
+      dbms_output.put_line( 'Region : ' || V_REGION || ', '  ||  To_char(V_COUNT) || ' producteurs');
+   end loop;
+   open A_CUR;
+
+   loop
+       fetch A_CUR into A_Ligne;
+       exit when A_CUR%NOTFOUND;
+       DECLARE
+            cursor A_PAR is SELECT DISTINCT SUM(a.QTE) QT, a.LIEU FROM achats a WHERE substr(a.DATES,8,2) = A_Ligne AND a.nv = numv GROUP BY (a.LIEU) ORDER BY SUM(a.QTE) DESC;
+
+       BEGIN
+            dbms_output.put_line( '***** Annee ' || A_Ligne || ' *****');
+            for A_PLIGNE in A_PAR loop
+                A_QT := A_PLIGNE.QT;
+                A_LIEU := A_PLIGNE.LIEU;
+                dbms_output.put_line( 'A ' || A_LIEU || ', ' || To_char( A_QT ) || ' bouteilles vendues') ;
+            end loop;
+
+        END;
+
+
+   end loop;
+   close A_CUR;
+   for vente in ventes LOOP
+       dbms_output.put_line('Nombre de bouteilles vendues en '|| vente.lieu ||' le '||vente.dates_y|| ' : '||vente.nb_bouteilles_vendues);
+   end LOOP;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE VSTAT (numvin VINS.nv%TYPE) AS
+
+cursor R_CUR is SELECT p.region,COUNT (DISTINCT p.np) FROM producteurs p, recoltes r, vins v WHERE r.nv = v.nv AND p.np = r.np AND v.nv = numvin GROUP BY (p.region);
+R_REGION PRODUCTEURS.REGION%TYPE;
+R_COUNT NUMBER(5);
+
+V_CRU VINS.CRU%TYPE;
+V_MILL VINS.MILL%TYPE;
+
+CURSOR villes is select lieu, sum(qte) as nb_bouteilles_vendues
+from achats
+where achats.nv = numvin
+group by lieu
+order by sum(qte) desc;
+
+CURSOR ventes is select lieu, EXTRACT(year FROM dates) as dates_y ,  sum(qte) as nb_bouteilles_vendues
+from achats
+where achats.nv = numvin
+group by lieu, EXTRACT(year FROM dates) 
+order by  lieu, sum(qte);
+
+BEGIN
+   open R_CUR;
+   loop
+      fetch R_CUR into R_REGION, R_COUNT;
+      exit when R_CUR%NOTFOUND;
+      dbms_output.put_line('Region de production du vin : '  || To_char(numvin) );
+      dbms_output.put_line('.......'  || R_REGION || ' ('  || To_char(R_COUNT) || ' producteurs)' );
+   end loop;
+   dbms_output.put_line('Vente du vin numero : ' || To_char(numvin) );
+   for ville in villes LOOP
+	dbms_output.put_line('.......' || ville.lieu || ' (' || ville.nb_bouteilles_vendues || 'b)');
+   	for vente in ventes LOOP
+	    IF vente.lieu = ville.lieu THEN
+          	dbms_output.put_line('...............en ' ||vente.dates_y|| ' : ' ||vente.nb_bouteilles_vendues);
+            end if;
+   	end LOOP;
+   end LOOP; 	
+END;
+/
+
+Select v.nv, a.lieu as VILLE, sum(a.qte) as CUMUL_VENTES, to_char(a.dates, 'YYYY') as ANNEE from achats a, vins v where v.nv = 12 and a.nv = 12 group by ROLLUP (v.nv, a.lieu), to_char(a.dates, 'YYYY')  order by  lieu, CUMUL_VENTES DESC;
+
+select lieu, sum(qte) as nb_bouteilles_vendues
+from achats
+where achats.nv = 12
+group by lieu
+order by  sum(qte) desc;
+
+
