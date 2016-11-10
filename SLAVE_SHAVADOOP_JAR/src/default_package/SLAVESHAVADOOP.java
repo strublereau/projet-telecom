@@ -119,44 +119,39 @@ public class SLAVESHAVADOOP {
 			mapping(nomInput, indice);
 		} else if (args[0].equals("modeUMXSMX")) {
 			Integer i = 0;
-			System.out.println(" On entre n modeUMXSMX " + args[1]);
+			System.out.println(" On entre en modeUMXSMX " + args);
 //			ArrayList<String> listeLigneSMX = new ArrayList<String>();
-			String nameSM = "";
-			String motUMX = "";
-			// XXXXXXXXXX
-			// preparation écriture fichier sortie
+			String nameSM = args[1];
+			System.out.println(nameSM);
+			String motUMX = args[2];
+			System.out.println(motUMX);
 			String dirwork = "/cal/homes/strublereau/workspace/";
 			FileOutputStream fos = new FileOutputStream(dirwork + nameSM);
 			PrintWriter pw = new PrintWriter(fos);
+			// XXXXXXXXXX
+			// preparation écriture fichier sortie
 			for (String argument : args) {
-				if (i > 0) {
-					if (i == 1) {
-						// récupération du mot à récuperer dans les fichiers
-						motUMX = argument;
-					} else {
-						if (i == 2) {
-							// récupération du nom de fichiers
-							nameSM = argument;
-						} else {
-							ArrayList<String> listeLigne = new ArrayList<String>();
-							listeLigne = readFile.readLines(dirwork + argument);
-							// creation des fichiers pour les masters
-							for (String line : listeLigne) {
-								// System.out.println(line);
-								// découper la ligne en mot (ici le mot + 1
-								String[] listemot = line.split(" ");
-								if (listemot[0].equals(motUMX)) {
-									// alimentation d'un arrayList listeLigneSM
-									pw.println(line);
-								}
-							}
-							// lecture du fichier
-
-							// Lecture du fichier input
-							// alimentation
-							// shuffling(mot, nomInput, indice);
-						}
+				if  (i > 2) {
+					System.out.println(argument);
+					ArrayList<String> listeLigne = new ArrayList<String>();
+					listeLigne = readFile.readLines(dirwork + argument);
+					System.out.println(listeLigne);
+				// creation des fichiers pour les masters
+					for (String line : listeLigne) {
+				// découper la ligne en mot (ici le mot + 1
+						String[] listemot = line.split(" ");
+						System.out.println(listemot[0]);
+						if (listemot[0].equals(motUMX)) {
+							// alimentation d'un arrayList listeLigneSM
+							System.out.println(line);
+							pw.println(line);
+						}		
 					}
+				// lecture du fichier
+
+				// Lecture du fichier input
+				// alimentation
+				// shuffling(mot, nomInput, indice);
 				}
 				i = i + 1;
 			}
