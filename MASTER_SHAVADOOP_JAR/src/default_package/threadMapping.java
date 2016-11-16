@@ -46,13 +46,13 @@ public class threadMapping implements Runnable {
 		      String ligne; 
 		      while (( ligne = br.readLine()) != null) { 
 		         // ligne contient une ligne de sortie normale ou d'erreur
-		    	  System.out.println("retour thread lancé: "+ ligne);
+		    	 // System.out.println("retour thread mapping: "+ ligne);
 		    	  this.listemot.add(ligne);
 		      }
 		      // on récupère le dernier element pour récuperer le fichier UM créer (return de la fonction remove)
 		      // et enlever cet élément de la liste des mots
 	    	  this.fichierM = this.listemot.remove(this.listemot.size() - 1);
-		      System.out.println("Tread fini " + nomFichier);
+		      //System.out.println("Tread fini " + nomFichier);
 		      } catch (IOException e) {
 		    	  System.out.println("Problème dans classe ThreadMappinig ");
 		      } 	

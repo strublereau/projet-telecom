@@ -88,6 +88,11 @@ public class SLAVESHAVADOOP {
 
 		// creation des fichiers pour les masters
 		for (String line : resultat_entrant) {
+//			line.replace(".", " ").replace(",", " ").replace(":", " ").replace("’", " ")
+//            .replace("'", " ").replace("?", " ").replace("!", " ").replace("%"," ")
+//            .replace("(", " ").replace(")", " ").replace("\""," ").replace("\t", " ")
+//            .replace("+", " ").replace("-", " ").replace("/", " ").replace("<", " ").replace("=", " ")
+//            .replace(">", " ").replace("*", " ").replace("( [0-9]+ )", " ");
 			// System.out.println(line);
 			// découper la ligne en mot
 			String[] listemot = line.split(" ");
@@ -100,7 +105,57 @@ public class SLAVESHAVADOOP {
 		}
 		return "OK";
 	}
+	public static String shuffling(String[] args, String nameSM, String dirwork, String motUMX)
+			throws InterruptedException, FileNotFoundException {
+		Integer i = 0;
+//		System.out.println(" On entre en modeUMXSMX " + args);
+//		ArrayList<String> listeLigneSMX = new ArrayList<String>();
+//		String nameSM = args[1];
+//		System.out.println(nameSM);
+//		String motUMX = args[2];
+//		System.out.println(motUMX);
+		FileOutputStream fos = new FileOutputStream(dirwork + nameSM);
+		PrintWriter pw = new PrintWriter(fos);
+		// 
+		// preparation écriture fichier sortie
+		Integer nombreMot  = 0;
+		for (String argument : args) {
+			if  (i > 2) {
+//				System.out.println(argument);
+				ArrayList<String> listeLigne = new ArrayList<String>();
+				listeLigne = readFile.readLines(dirwork + argument);
+//				System.out.println(listeLigne);
+			// creation des fichiers pour les masters
+				for (String line : listeLigne) {
+			// découper la ligne en mot (ici le mot + 1
+					String[] listemot = line.split(" ");
+//					System.out.println(listemot[0]);
+					if (listemot[0].equals(motUMX)) {
+						// alimentation d'un arrayList listeLigneSM
+//						System.out.println(line);
+						pw.println(line);
+						nombreMot = nombreMot + 1;
+					}		
+				}
+			}
+			i = i + 1;
+		}
+		pw.close();
+		
+		//    Ecriture du RMX
+		String ligneRMX = motUMX + " " + nombreMot;
+		System.out.println(ligneRMX);
+		//ecriture RMX
+		String nameRM = "R" + nameSM.substring(1);
+//		System.out.println(nameRM);
+		FileOutputStream fosr = new FileOutputStream(dirwork + nameRM);
+		PrintWriter pwr = new PrintWriter(fosr);
+		pwr.println(ligneRMX);
+		pwr.close();
+		return "OK";
+	}
 
+	
 	public static void main(String[] args) throws InterruptedException,
 			FileNotFoundException {
 		// Récuperation du parametre en entrée nom du fichier Input
@@ -118,49 +173,17 @@ public class SLAVESHAVADOOP {
 			// Lecture du fichier input
 			mapping(nomInput, indice);
 		} else if (args[0].equals("modeUMXSMX")) {
-			Integer i = 0;
-			System.out.println(" On entre n modeUMXSMX " + args[1]);
+//			Integer i = 0;
+//			System.out.println(" On entre en modeUMXSMX " + args);
 //			ArrayList<String> listeLigneSMX = new ArrayList<String>();
-			String nameSM = "";
-			String motUMX = "";
-			// XXXXXXXXXX
-			// preparation écriture fichier sortie
+			String nameSM = args[1];
+//			System.out.println(nameSM);
+			String motUMX = args[2];
+//			System.out.println(motUMX);
 			String dirwork = "/cal/homes/strublereau/workspace/";
-			FileOutputStream fos = new FileOutputStream(dirwork + nameSM);
-			PrintWriter pw = new PrintWriter(fos);
-			for (String argument : args) {
-				if (i > 0) {
-					if (i == 1) {
-						// récupération du mot à récuperer dans les fichiers
-						motUMX = argument;
-					} else {
-						if (i == 2) {
-							// récupération du nom de fichiers
-							nameSM = argument;
-						} else {
-							ArrayList<String> listeLigne = new ArrayList<String>();
-							listeLigne = readFile.readLines(dirwork + argument);
-							// creation des fichiers pour les masters
-							for (String line : listeLigne) {
-								// System.out.println(line);
-								// découper la ligne en mot (ici le mot + 1
-								String[] listemot = line.split(" ");
-								if (listemot[0].equals(motUMX)) {
-									// alimentation d'un arrayList listeLigneSM
-									pw.println(line);
-								}
-							}
-							// lecture du fichier
-
-							// Lecture du fichier input
-							// alimentation
-							// shuffling(mot, nomInput, indice);
-						}
-					}
-				}
-				i = i + 1;
-			}
-			pw.close();
+			shuffling(args, nameSM, dirwork, motUMX);
 		}
 	}
 }
+
+
