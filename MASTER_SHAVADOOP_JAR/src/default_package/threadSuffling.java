@@ -50,7 +50,7 @@ public class threadSuffling implements Runnable {
 		for (String nomF : listenomFichier) {
 			parametre = parametre + " " + nomF;
 		}
-		System.out.println("parametre : " + parametre);
+		//System.out.println("parametre : " + parametre);
 		String[] args1 = { "/usr/bin/ssh",  "strublereau@" + machine , " java -jar ~/workspace/projet-telecom/TPdistrib/slaveshavadoop.jar " + parametre };
 		   try {
 			  //args1[1]= "strublereau@" + machine;
@@ -64,14 +64,20 @@ public class threadSuffling implements Runnable {
 		      String ligne; 
 		      while (( ligne = br.readLine()) != null) { 
 		         // ligne contient une ligne de sortie normale : a priori le mot et son nombre
-		    	  System.out.println("retour thread lancé: "+ ligne);
+
+		    	 System.out.println("retour thread : "+ ligne);
 		    	 // this.lignemot.add(ligne);
-		    	  this.lignemot = ligne;
+		    	 String[] word = ligne.split(" ");
+		    	 if (word.length > 2) {
+		    		 System.out.println("pb thread sur mot : "+ this.mot); 
+		    	 }
+		    	 this.lignemot = ligne;
 		      }
 		      // on récupère le dernier element pour récuperer le fichier UM créer (return de la fonction remove)
 		      // et enlever cet élément de la liste des mots
 	    	  //this.fichierRM = this.lignemot.remove(this.lignemot.size() - 1);
-		      System.out.println("Tread fini " + nomFichier);
+		      
+		      //System.out.println("Tread fini " + nomFichier);
 		      } catch (IOException e) {
 		    	  System.out.println("Problème dans classe ThreadMappinig ");
 		      } 	
